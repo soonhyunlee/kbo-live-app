@@ -419,8 +419,8 @@ async function captureKboRankingsImage() {
     try {
         console.log("📸 [순위표 캡처 실행] 네이버 KBO 공식 순위표 스크린샷 적립을 시작합니다...");
         // thum.io 무료 웹사이트 렌더링 스크린샷 크롭 게이트웨이 주소
-        // 네이버 스포츠 모바일 순위표 영역을 가로 580px, 세로 650px 크기로 정밀 스크린샷 촬영하여 바이너리 스트림 다운로드
-        const captureUrl = 'https://image.thum.io/get/width/580/crop/650/maxAge/1/https://m.sports.naver.com/kbaseball/record/kbo?seasonCode=2026&tab=teamRank';
+        // 네이버 스포츠 데스크톱 PC버전 순위표 영역(가로 1020px, 세로 680px)을 정밀 캡처하여 바이너리 스트림 다운로드
+        const captureUrl = 'https://image.thum.io/get/width/1020/crop/680/maxAge/1/https://sports.news.naver.com/kbaseball/record/index';
         
         const response = await axios({
             method: 'get',
