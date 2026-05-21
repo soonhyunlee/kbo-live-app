@@ -265,8 +265,13 @@ app.get('/api/kbo/live', async (req, res) => {
                     }
                 });
                 const allGames = scheduleRes.data.result?.games || [];
-                // 오늘 날짜의 게임만 정밀 필터링
-                const todayGames = allGames.filter(g => g.gameDate === formatted);
+                // 오늘 날짜의 게임 중 한국 KBO 10대 구단 경기만 엄격하게 필터링! 🌟
+                const kboTeams = ['KIA', '삼성', 'LG', '두산', '한화', '롯데', 'SSG', 'KT', '키움', 'NC'];
+                const todayGames = allGames.filter(g => 
+                    g.gameDate === formatted && 
+                    kboTeams.includes(g.awayTeamName) && 
+                    kboTeams.includes(g.homeTeamName)
+                );
                 if (todayGames.length > 0) {
                     matchId = todayGames[0].gameId;
                 }
@@ -350,11 +355,16 @@ app.get('/api/kbo/schedule', async (req, res) => {
         });
         
         const allGames = response.data.result?.games || [];
-        // 오늘 날짜의 게임만 정밀 필터링
-        const naverGames = allGames.filter(g => g.gameDate === formatted);
+        // 오늘 날짜의 게임 중 한국 KBO 10대 구단 경기만 엄격하게 필터링! 🌟
+        const kboTeams = ['KIA', '삼성', 'LG', '두산', '한화', '롯데', 'SSG', 'KT', '키움', 'NC'];
+        const naverGames = allGames.filter(g => 
+            g.gameDate === formatted && 
+            kboTeams.includes(g.awayTeamName) && 
+            kboTeams.includes(g.homeTeamName)
+        );
         
         if (naverGames.length === 0) {
-            throw new Error("오늘 편성된 KBO 경기가 없습니다.");
+            throw new Error("오늘 편성된 한국 KBO 경기가 없습니다.");
         }
         
         const schedule = naverGames.map(g => {
