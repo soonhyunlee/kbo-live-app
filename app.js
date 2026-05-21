@@ -284,6 +284,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 오늘의 실제 경기 목록을 가져와서 상단 선택기 드롭다운을 동적으로 렌더링하고 바인딩
+    async function initMatchSelector() {
+        try {
+            const response = await fetch('/api/kbo/schedule');
+            if (!response.ok) throw new Error('Schedule API failed');
+            const schedule = await response.json();
+            
+            if (schedule && schedule.length > 0) {
+                // 첫 번째 경기를 디폴트 매치로 자동 지정
+                gameState.activeMatchId = schedule[0].id;
+                matchTitle.innerText = `${schedule[0].away} vs ${schedule[0].home} (${schedule[0].ballpark.split(' ')[0]})`;
+                
+                // 드롭다운 컨텐츠 동적 렌더링
+                matchDropdownContent.innerHTML = '';
+                schedule.forEach((s, idx) => {
+                    const option = document.createElement('a');
+                    option.href = '#';
+                    option.className = `match-option ${idx === 0 ? 'active' : ''}`;
+                    option.dataset.matchId = s.id;
+                    
+                    const isLive = s.status.includes('진행중') || s.status.includes('회');
+                    const badgeClass = isLive ? 'badge-live' : 'badge-time';
+                    const badgeText = isLive ? 'LIVE' : s.status.split(' ')[0];
+                    
+                    option.innerHTML = `${s.away} vs ${s.home} (${s.ballpark.split(' ')[0]}) <span class="${badgeClass}">${badgeText}</span>`;
+                    matchDropdownContent.appendChild(option);
+                    
+                    // 각 옵션의 클릭 이벤트 동적 장착
+                    option.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('.match-option').forEach(o => o.classList.remove('active'));
+                        option.classList.add('active');
+                        matchTitle.innerText = `${s.away} vs ${s.home} (${s.ballpark.split(' ')[0]})`;
+                        
+                        // 액티브 매치 스왑 및 즉시 데이터 갱신
+                        gameState.activeMatchId = s.id;
+                        fetchLiveGameData();
+                    });
+                });
+            }
+        } catch (error) {
+            console.error("경기 일정 헤더 연동 오류:", error);
+        }
+    }
+
     // Trigger alert banner
     function triggerHighlightText(text) {
         const banner = document.createElement('div');
@@ -352,25 +397,10 @@ document.addEventListener('DOMContentLoaded', () => {
         matchDropdownContent.classList.toggle('show');
     });
 
+    // Dynamic options are generated inside initMatchSelector dynamically
+    // Clicking anywhere else removes match selector dropdown
     document.addEventListener('click', () => {
         matchDropdownContent.classList.remove('show');
-    });
-
-    matchOptions.forEach(opt => {
-        opt.addEventListener('click', (e) => {
-            e.preventDefault();
-            matchOptions.forEach(o => o.classList.remove('active'));
-            opt.classList.add('active');
-            matchTitle.innerText = opt.innerText.replace(" LIVE", "").replace(" 18:30", "");
-            
-            // Switch current active match ID
-            if (opt.dataset.match === '2') {
-                gameState.activeMatchId = '20260521LGDO0';
-            } else {
-                gameState.activeMatchId = '20260521KIASS0';
-            }
-            fetchLiveGameData();
-        });
     });
 
     // Modal stream url triggers
@@ -465,9 +495,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     // 6. INITIAL RUNS
     // ----------------------------------------------------
+    // 1. 오늘의 실제 경기 리스트 로드 및 헤더 바인딩 연동
+    initMatchSelector();
+    
+    // 2. 비디오 중계 스트림 엔진 활성화
     initHlsStream(streamUrlInput.value);
     
-    // Start active live synchronization & bots
+    // 3. 실시간 동기화 스케줄러 & 채팅봇 시동
     startRealTimeSync();
     runChatBotSimulator();
 });

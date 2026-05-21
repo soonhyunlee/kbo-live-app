@@ -223,11 +223,22 @@ function advanceRunners(isHit) {
     }
 }
 
+// 한국 시간(KST) 기준으로 오늘 날짜 포맷팅 유틸리티
+function getKstDate() {
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const today = new Date(Date.now() + kstOffset);
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return {
+        formatted: `${yyyy}-${mm}-${dd}`, // YYYY-MM-DD
+        compact: `${yyyy}${mm}${dd}`       // YYYYMMDD
+    };
+}
+
 // ==========================================================================
-// 2. REAL-TIME WEB SCRAPER ROUTE (네이버 스포츠 크롤링 예시)
+// 2. REAL-TIME WEB SCRAPER ROUTE
 // ==========================================================================
-// 이 라우터는 네이버 실시간 야구 경기 데이터를 실제로 긁어올 수 있는 아키텍처 모델입니다.
-// 실제 서비스에서는 외부 데이터 보호 정책(CORS, 로봇 배제 정책 등)을 고려해 적합한 상용 파싱 API를 활용하는 것을 권장합니다.
 app.get('/api/kbo/live', async (req, res) => {
     const isMockMode = req.query.mock !== 'false';
     
@@ -238,9 +249,33 @@ app.get('/api/kbo/live', async (req, res) => {
     
     // 실제 라이브 정보 크롤링 구현부 (사용자가 API mock 모드를 꺼두었을 때 동작)
     try {
-        // 예시: 네이버 스포츠 모바일 중계 일정 리스트 또는 경기 세부 API 호출
-        // 네이버 스포츠 모바일은 경기별로 고유 아이디를 가진 JSON API를 제공합니다.
-        const matchId = req.query.matchId || '20260521KIASS0'; // KIA vs 삼성 경기 예시 ID
+        const { formatted, compact } = getKstDate();
+        let matchId = req.query.matchId;
+        
+        // 쿼리 매개변수에 구체적인 경기 ID가 제공되지 않았을 때의 동적 폴백 지능형 설계
+        if (!matchId) {
+            try {
+                const scheduleUrl = `https://m.sports.naver.com/api/schedule/sports/kbo?date=${formatted}`;
+                const scheduleRes = await axios.get(scheduleUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                });
+                const games = scheduleRes.data.games || [];
+                if (games.length > 0) {
+                    // 오늘 열리는 첫 번째 실제 경기의 진짜 ID를 디폴트로 주입! 🌟
+                    matchId = games[0].gameId;
+                }
+            } catch (scheduleErr) {
+                console.warn("디폴트 경기 ID 동적 획득 실패, 안전 폴백을 적용합니다:", scheduleErr.message);
+            }
+        }
+        
+        // 만약 오늘 경기가 없는 오프데이일 경우의 최후의 보루
+        if (!matchId) {
+            matchId = `${compact}KIASS0`;
+        }
+        
         const naverSportsUrl = `https://m.sports.naver.com/api/game/${matchId}/relay`; 
         
         const response = await axios.get(naverSportsUrl, {
@@ -253,7 +288,7 @@ app.get('/api/kbo/live', async (req, res) => {
         
         // 받아온 실제 JSON 데이터를 본 어플리케이션 규격으로 파싱 및 매핑
         const realTimeData = {
-            gameStatus: data.status || 'LIVE', // 경기 상태 (BEFORE, LIVE, TIMEOUT, END)
+            gameStatus: data.status || 'LIVE',
             inning: data.inning || 8,
             isInningTop: data.inningType === 'TOP',
             awayTeam: data.awayTeamName || 'KIA',
@@ -267,7 +302,6 @@ app.get('/api/kbo/live', async (req, res) => {
             awayBB: parseInt(data.awayBB) || 0,
             homeBB: parseInt(data.homeBB) || 0,
             
-            // 실시간 볼카운트 및 주자 상황 매핑
             balls: parseInt(data.ballCount) || 0,
             strikes: parseInt(data.strikeCount) || 0,
             outs: parseInt(data.outCount) || 0,
@@ -282,7 +316,7 @@ app.get('/api/kbo/live', async (req, res) => {
             pitches: (data.pitches || []).map(p => ({
                 x: p.coordinateX,
                 y: p.coordinateY,
-                type: p.resultType // 'strike', 'ball', 'hit'
+                type: p.resultType
             })),
             lastCommentary: data.lastCommentaryText || '',
             commentaryHistory: (data.relayTexts || []).map(t => ({
@@ -295,24 +329,57 @@ app.get('/api/kbo/live', async (req, res) => {
         res.json(realTimeData);
     } catch (error) {
         console.error("실시간 KBO 데이터 크롤링 중 에러 발생, 시뮬레이터 데이터로 대체합니다:", error.message);
-        // 에러가 나면 안전한 폴백(Fallback)을 수행하여 사용자 화면이 안 나오거나 튕기는 불상사 원천 차단
         res.json(simulatedMatchData);
     }
 });
 
-// 경기 일정 리스트 API
+// 경기 일정 리스트 API - 실제 포털에서 오늘의 경기 리스트 동적 추출
 app.get('/api/kbo/schedule', async (req, res) => {
+    const { formatted, compact } = getKstDate();
     try {
-        // 실제 KBO 오늘 일정을 파싱하기 위한 크롤링 목업
-        const todaySchedule = [
-            { id: '20260521KIASS0', away: 'KIA', home: '삼성', score: `${simulatedMatchData.awayScore} : ${simulatedMatchData.homeScore}`, status: `${simulatedMatchData.inning}회${simulatedMatchData.isInningTop ? '초' : '말'} 진행중`, ballpark: '대구 삼성라이온즈파크' },
-            { id: '20260521LGD0', away: 'LG', home: '두산', score: '2 : 2', status: '5회말 진행중', ballpark: '서울 잠실야구장' },
-            { id: '20260521HWLT0', away: '한화', home: '롯데', score: 'VS', status: '18:30 예정', ballpark: '부산 사직야구장' },
-            { id: '20260521SSGKT0', away: 'SSG', home: 'KT', score: 'VS', status: '18:30 예정', ballpark: '수원 KT위즈파크' }
-        ];
-        res.json(todaySchedule);
+        const url = `https://m.sports.naver.com/api/schedule/sports/kbo?date=${formatted}`;
+        const response = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
+        
+        const naverGames = response.data.games || [];
+        if (naverGames.length === 0) {
+            throw new Error("오늘 편성된 KBO 경기가 없습니다.");
+        }
+        
+        const schedule = naverGames.map(g => {
+            let statusText = '18:30 예정';
+            if (g.state === 'RUNNING') {
+                statusText = `${g.gameStage || '경기가열리는중'} 진행중`;
+            } else if (g.state === 'AFTER') {
+                statusText = '종료';
+            } else if (g.state === 'CANCEL') {
+                statusText = '우천취소';
+            } else if (g.state === 'BEFORE') {
+                statusText = g.gameTime || '18:30 예정';
+            }
+            
+            return {
+                id: g.gameId,
+                away: g.awayTeamName,
+                home: g.homeTeamName,
+                score: g.state === 'BEFORE' ? 'VS' : `${g.awayScore} : ${g.homeScore}`,
+                status: statusText,
+                ballpark: g.stadiumName || 'KBO 야구장'
+            };
+        });
+        res.json(schedule);
     } catch (error) {
-        res.status(500).json({ error: '일정을 가져오는데 실패했습니다.' });
+        console.warn("실시간 일정을 가져올 수 없어 안전한 Mock 일정을 리턴합니다:", error.message);
+        const fallbackSchedule = [
+            { id: `${compact}KIASS0`, away: 'KIA', home: '삼성', score: `${simulatedMatchData.awayScore} : ${simulatedMatchData.homeScore}`, status: `${simulatedMatchData.inning}회${simulatedMatchData.isInningTop ? '초' : '말'} 진행중`, ballpark: '대구 삼성라이온즈파크' },
+            { id: `${compact}LGDO0`, away: 'LG', home: '두산', score: '2 : 2', status: '5회말 진행중', ballpark: '서울 잠실야구장' },
+            { id: `${compact}HWLT0`, away: '한화', home: '롯데', score: 'VS', status: '18:30 예정', ballpark: '부산 사직야구장' },
+            { id: `${compact}SSGKT0`, away: 'SSG', home: 'KT', score: 'VS', status: '18:30 예정', ballpark: '수원 KT위즈파크' }
+        ];
+        res.json(fallbackSchedule);
     }
 });
 
