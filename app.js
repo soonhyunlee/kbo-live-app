@@ -291,77 +291,19 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/kbo/rankings');
             if (!response.ok) throw new Error('Rankings API failed');
-            const result = await response.json();
+            const rankings = await response.json();
             
             const tbody = document.getElementById('rankingsTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
             
-            // 1. 네이버 순위표 캡처 이미지 탑재 및 하이브리드 토글 세팅
-            const rankToggleBar = document.getElementById('rankToggleBar');
-            const rankImageContainer = document.getElementById('rankImageContainer');
-            const rankTableContainer = document.getElementById('rankTableContainer');
-            const kboRankingsImg = document.getElementById('kboRankingsImg');
-            
-            if (result.useImage) {
-                // 토글 스위치 및 이미지 활성화 📡
-                if (rankToggleBar) rankToggleBar.style.display = 'flex';
-                if (kboRankingsImg) kboRankingsImg.src = result.imageUrl;
-                
-                // 디폴트로 시각이 뛰어난 이미지 모드를 가동합니다! (사용자 요구사항 부합 🌟)
-                if (rankImageContainer) rankImageContainer.style.display = 'block';
-                if (rankTableContainer) rankTableContainer.style.display = 'none';
-                
-                const toggleTableBtn = document.getElementById('toggleTableBtn');
-                const toggleImageBtn = document.getElementById('toggleImageBtn');
-                
-                if (toggleTableBtn && toggleImageBtn) {
-                    // 버튼 활성화 탭 표시 동기화
-                    toggleTableBtn.classList.remove('active');
-                    toggleTableBtn.style.background = 'transparent';
-                    toggleTableBtn.style.color = 'rgba(255,255,255,0.7)';
-                    
-                    toggleImageBtn.classList.add('active');
-                    toggleImageBtn.style.background = 'var(--neon-purple)';
-                    toggleImageBtn.style.color = 'white';
-                    
-                    // 이벤트 중복 방지를 위해 리스너 오버라이드
-                    toggleTableBtn.onclick = () => {
-                        rankTableContainer.style.display = 'block';
-                        rankImageContainer.style.display = 'none';
-                        
-                        toggleTableBtn.style.background = 'var(--neon-purple)';
-                        toggleTableBtn.style.color = 'white';
-                        toggleImageBtn.style.background = 'transparent';
-                        toggleImageBtn.style.color = 'rgba(255,255,255,0.7)';
-                    };
-                    
-                    toggleImageBtn.onclick = () => {
-                        rankImageContainer.style.display = 'block';
-                        rankTableContainer.style.display = 'none';
-                        
-                        toggleImageBtn.style.background = 'var(--neon-purple)';
-                        toggleImageBtn.style.color = 'white';
-                        toggleTableBtn.style.background = 'transparent';
-                        toggleTableBtn.style.color = 'rgba(255,255,255,0.7)';
-                    };
-                }
-            } else {
-                // 캡처본이 없거나 에러 시 표 형식으로 강제 복원
-                if (rankToggleBar) rankToggleBar.style.display = 'none';
-                if (rankImageContainer) rankImageContainer.style.display = 'none';
-                if (rankTableContainer) rankTableContainer.style.display = 'block';
-            }
-            
-            // 2. 표 데이터 주입 (폴백 및 하이브리드 지원)
             const teamClassMap = {
                 'KIA': 'text-kia', '삼성': 'text-samsung', '두산': 'text-doosan', 
                 'LG': 'text-lg', 'SSG': 'text-ssg', 'NC': 'text-nc', 
                 '롯데': 'text-lotte', '한화': 'text-hanwha', 'KT': 'text-kt', '키움': 'text-kiwoom'
             };
 
-            const list = result.data || [];
-            list.forEach(r => {
+            rankings.forEach(r => {
                 const tr = document.createElement('tr');
                 if (r.rank <= 3) {
                     tr.className = 'rank-top';
