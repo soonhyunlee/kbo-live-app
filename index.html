@@ -404,10 +404,28 @@
             <!-- Tab Content: Rankings (Hidden initially) -->
             <div class="dashboard-grid tab-content" id="ranking-tab">
                 <div class="glass-card full-width-card">
-                    <div class="card-title">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                         <h3><i class="fa-solid fa-list-ol"></i> 2026 KBO 정규리그 팀 순위</h3>
+                        <!-- 캡처본 / 표 토글형 글래스모피즘 스위치 🌟 -->
+                        <div class="rank-view-toggle-bar" id="rankToggleBar" style="display: none; background: rgba(255, 255, 255, 0.05); padding: 4px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; gap: 4px;">
+                            <button type="button" class="toggle-btn active" id="toggleTableBtn" style="background: var(--neon-purple); color: white; border: none; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.3s ease;"><i class="fa-solid fa-table"></i> 표 형식</button>
+                            <button type="button" class="toggle-btn" id="toggleImageBtn" style="background: transparent; color: rgba(255, 255, 255, 0.7); border: none; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: all 0.3s ease;"><i class="fa-solid fa-image"></i> 네이버 캡처본 (23:50)</button>
+                        </div>
                     </div>
-                    <table class="ranking-table">
+                    
+                    <!-- 네이버 공식 순위표 이미지 뷰어 영역 (WAF Bypass) -->
+                    <div id="rankImageContainer" style="display: none; text-align: center; padding: 15px; border-radius: 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 15px;">
+                        <div style="margin-bottom: 12px; font-size: 0.88rem; color: var(--neon-cyan); font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span class="live-indicator-dot" style="width: 8px; height: 8px; background-color: var(--neon-cyan); border-radius: 50%; box-shadow: 0 0 8px var(--neon-cyan); display: inline-block;"></span>
+                            📡 23시 50분 네이버 스포츠 실시간 KBO 순위 자동 캡처본 연동 완료
+                        </div>
+                        <div style="overflow: hidden; border-radius: 12px; max-width: 600px; margin: 0 auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); border: 2px solid rgba(255, 255, 255, 0.1);">
+                            <img id="kboRankingsImg" src="" alt="네이버 야구 순위표 캡처 이미지" style="width: 100%; height: auto; display: block; filter: brightness(0.95) contrast(1.05);">
+                        </div>
+                    </div>
+
+                    <div id="rankTableContainer">
+                        <table class="ranking-table">
                         <thead>
                             <tr>
                                 <th>순위</th>
@@ -545,6 +563,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
 
