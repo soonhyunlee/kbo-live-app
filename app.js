@@ -155,6 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fetch new schedule if schedule tab is chosen
         if (tabId === 'schedule') {
             fetchScheduleData();
+        } else if (tabId === 'ranking') {
+            fetchRankingsData();
         }
     }
 
@@ -281,6 +283,49 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) {
             console.error('스케줄 정보를 로드하지 못했습니다:', error);
+        }
+    }
+
+    // Fetch live KBO team rankings from Backend
+    async function fetchRankingsData() {
+        try {
+            const response = await fetch('/api/kbo/rankings');
+            if (!response.ok) throw new Error('Rankings API failed');
+            const rankings = await response.json();
+            
+            const tbody = document.getElementById('rankingsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            
+            const teamClassMap = {
+                'KIA': 'text-kia', '삼성': 'text-samsung', '두산': 'text-doosan', 
+                'LG': 'text-lg', 'SSG': 'text-ssg', 'NC': 'text-nc', 
+                '롯데': 'text-lotte', '한화': 'text-hanwha', 'KT': 'text-kt', '키움': 'text-kiwoom'
+            };
+
+            rankings.forEach(r => {
+                const tr = document.createElement('tr');
+                if (r.rank <= 3) {
+                    tr.className = 'rank-top';
+                }
+                
+                const teamClass = teamClassMap[r.team] || '';
+                tr.innerHTML = `
+                    <td>${r.rank}</td>
+                    <td class="bold-team ${teamClass}">${r.team}</td>
+                    <td>${r.games}</td>
+                    <td>${r.won}</td>
+                    <td>${r.drawn}</td>
+                    <td>${r.lost}</td>
+                    <td>${parseFloat(r.winRate).toFixed(3)}</td>
+                    <td>${parseFloat(r.gamesBehind).toFixed(1)}</td>
+                    <td>${r.recent}</td>
+                    <td>${r.streak}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            console.error('순위 정보를 로드하지 못했습니다:', error);
         }
     }
 
@@ -492,16 +537,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ----------------------------------------------------
     // 6. INITIAL RUNS
     // ----------------------------------------------------
     // 1. 오늘의 실제 경기 리스트 로드 및 헤더 바인딩 연동
     initMatchSelector();
     
-    // 2. 비디오 중계 스트림 엔진 활성화
+    // 2. 실시간 구단 순위 데이터 선제 로딩 🌟
+    fetchRankingsData();
+    
+    // 3. 비디오 중계 스트림 엔진 활성화
     initHlsStream(streamUrlInput.value);
     
-    // 3. 실시간 동기화 스케줄러 & 채팅봇 시동
+    // 4. 실시간 동기화 스케줄러 & 채팅봇 시동
     startRealTimeSync();
     runChatBotSimulator();
 });
