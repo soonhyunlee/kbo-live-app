@@ -223,16 +223,25 @@ function advanceRunners(isHit) {
     }
 }
 
-// 한국 시간(KST) 기준으로 오늘 날짜 포맷팅 유틸리티
+// 한국 시간(KST) 기준으로 오늘 날짜 포맷팅 유틸리티 (서버의 로컬 시간대에 흔들림 없는 설계)
 function getKstDate() {
-    const kstOffset = 9 * 60 * 60 * 1000;
-    const today = new Date(Date.now() + kstOffset);
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
+    const today = new Date();
+    // Intl.DateTimeFormat을 활용하여 100% 안전하게 서울 표준 시간 기준 추출
+    const formatter = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    
+    const parts = formatter.formatToParts(today);
+    const yyyy = parts.find(p => p.type === 'year').value;
+    const mm = parts.find(p => p.type === 'month').value;
+    const dd = parts.find(p => p.type === 'day').value;
+    
     return {
         year: String(yyyy),
-        month: mm,
+        month: String(mm),
         formatted: `${yyyy}-${mm}-${dd}`, // YYYY-MM-DD
         compact: `${yyyy}${mm}${dd}`       // YYYYMMDD
     };
@@ -401,32 +410,45 @@ app.get('/api/kbo/schedule', async (req, res) => {
     }
 });
 
-// KBO 구단 실시간 순위 API - 네이버 스포츠 공식 순위 Gateway 연동
+// KBO 구단 실시간 순위 API - 네이버 스포츠 공식 기록실 Next.js __NEXT_DATA__ 정규식 스크래핑 방식
 app.get('/api/kbo/rankings', async (req, res) => {
     try {
-        const url = 'https://api-gw.sports.naver.com/ranking/teams?category=kbo';
+        const url = 'https://m.sports.naver.com/kbaseball/record/kbo?seasonCode=2026&tab=teamRank';
         const response = await axios.get(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'https://m.sports.naver.com/',
+                'Origin': 'https://m.sports.naver.com'
             }
         });
         
-        // 네이버 JSON 응답의 teamRankings 리스트 파싱
-        const teamRankings = response.data.result?.teamRankings || [];
+        const html = response.data;
+        // HTML 소스 내부의 __NEXT_DATA__ JSON 객체를 안전하게 캡처하는 정밀 정규식 🌟
+        const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+        if (!match) {
+            throw new Error("HTML 소스에서 __NEXT_DATA__ 스크립트를 추출하지 못했습니다.");
+        }
+        
+        const rootData = JSON.parse(match[1]);
+        
+        // Next.js 상태 트리 내부에 포진된 진짜 실시간 구단 순위 목록 경로 안전 파헤치기
+        const teamRankings = rootData?.props?.pageProps?.initialState?.kbaseball?.ranking?.team || 
+                             rootData?.props?.pageProps?.initialState?.kbaseball?.ranking?.teamRankings || [];
+                             
         if (teamRankings.length === 0) {
-            throw new Error("순위 데이터를 파싱하지 못했습니다.");
+            throw new Error("KBO 순위 데이터 리스트가 비어 있습니다.");
         }
         
         const rankings = teamRankings.map(t => ({
-            rank: t.rank,
-            team: t.teamName,
-            games: t.gameCount,
-            won: t.won,
-            drawn: t.drawn,
-            lost: t.lost,
-            winRate: t.winRate,
-            gamesBehind: t.gamesBehind,
-            recent: t.recentResult || '0승-0패',
+            rank: t.rank || 0,
+            team: t.teamName || t.team || 'KBO팀',
+            games: t.gameCount || t.games || 0,
+            won: t.won || 0,
+            drawn: t.drawn || 0,
+            lost: t.lost || 0,
+            winRate: t.winRate || '0.000',
+            gamesBehind: t.gamesBehind || '0.0',
+            recent: t.recentResult || t.recent || '0승-0패',
             streak: t.streak || '0'
         }));
         
