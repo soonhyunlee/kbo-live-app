@@ -1,0 +1,32 @@
+# Dependency directories (무거운 의존성 라이브러리 제외)
+node_modules/
+jspm_packages/
+web_resources/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Operating System files (OS 임시 파일 제외)
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Environment variables (환경 변수 보안 파일 제외)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE configurations (개발도구 설정 파일 제외)
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KBO Live Match Center - 실시간 야구 중계 플랫폼</title>
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KBO Live">
+    <link rel="apple-touch-icon" href="assets/bg.png">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- hls.js for HLS streaming support -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-kia">
+    <!-- Background Blur Decorative Elements -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="app-container">
+        <!-- Main Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <i class="fa-solid fa-baseball-bat-ball logo-icon animate-pulse"></i>
+                <div class="logo-text">
+                    <h1>KBO LIVE</h1>
+                    <span>MATCH CENTER</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="live"><i class="fa-solid fa-tower-broadcast"></i> 실시간 중계</a>
+                <a href="#" class="nav-item" data-tab="schedule"><i class="fa-solid fa-calendar-days"></i> 경기 일정</a>
+                <a href="#" class="nav-item" data-tab="ranking"><i class="fa-solid fa-list-ol"></i> 구단 순위</a>
+                <a href="#" class="nav-item" data-tab="highlights"><i class="fa-solid fa-circle-play"></i> 하이라이트</a>
+            </nav>
+
+            <div class="team-selector-panel">
+                <h3><i class="fa-solid fa-shirt"></i> 마이 팀 테마</h3>
+                <div class="team-grid">
+                    <button class="team-btn kia active" data-team="kia" title="KIA 타이거즈">KIA</button>
+                    <button class="team-btn samsung" data-team="samsung" title="삼성 라이온즈">삼성</button>
+                    <button class="team-btn lg" data-team="lg" title="LG 트윈스">LG</button>
+                    <button class="team-btn doosan" data-team="doosan" title="두산 베어스">두산</button>
+                    <button class="team-btn ssg" data-team="ssg" title="SSG 랜더스">SSG</button>
+                    <button class="team-btn lotte" data-team="lotte" title="롯데 자이언츠">롯데</button>
+                    <button class="team-btn hanwha" data-team="hanwha" title="한화 이글스">한화</button>
+                    <button class="team-btn kiwoom" data-team="kiwoom" title="키움 히어로즈">키움</button>
+                    <button class="team-btn nc" data-team="nc" title="NC 다이노스">NC</button>
+                    <button class="team-btn kt" data-team="kt" title="KT 위즈">KT</button>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <p>© 2026 KBO Live Match Center</p>
+                <span class="badge live-badge">LIVE SIMULATOR</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-left">
+                    <div class="live-match-selector">
+                        <button class="match-select-btn">
+                            <span class="pulse-dot"></span>
+                            <span class="match-title">KIA (선발 네일) vs 삼성 (선발 원태인) - 대구</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="match-dropdown-content">
+                            <a href="#" class="match-option active" data-match="1">KIA vs 삼성 (대구) <span class="badge-live">LIVE</span></a>
+                            <a href="#" class="match-option" data-match="2">LG vs 두산 (잠실) <span class="badge-live">LIVE</span></a>
+                            <a href="#" class="match-option" data-match="3">한화 vs 롯데 (사직) <span class="badge-time">18:30</span></a>
+                            <a href="#" class="match-option" data-match="4">SSG vs KT (수원) <span class="badge-time">18:30</span></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="search-bar">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="선수, 구단, 뉴스 검색...">
+                    </div>
+                    <div class="mode-toggle-wrapper" title="실제 KBO 라이브 연동 및 가상 시뮬레이션 모드 전환">
+                        <span class="mode-label">🤖 시뮬레이터</span>
+                        <label class="switch">
+                            <input type="checkbox" id="realtimeModeToggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="mode-label realtime-label">🔌 실제 KBO LIVE</span>
+                    </div>
+                    <div class="stream-input-btn" id="openStreamModal" title="실시간 스트리밍 URL 입력">
+                        <i class="fa-solid fa-link"></i> 스트림 연결
+                    </div>
+                    <div class="user-profile">
+                        <img src="assets/bg.png" alt="User Avatar" class="avatar">
+                        <span class="username">야구광팬</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content Panels -->
+            <div class="dashboard-grid tab-content active" id="live-tab">
+                
+                <!-- Center Grid: Video & Info -->
+                <div class="center-panel">
+                    <!-- Live Video Player Card -->
+                    <div class="glass-card video-card">
+                        <div class="card-header">
+                            <div class="status-indicators">
+                                <span class="live-tag"><i class="fa-solid fa-circle-play"></i> LIVE</span>
+                                <span class="viewer-count"><i class="fa-solid fa-eye"></i> 142,520명 시청 중</span>
+                            </div>
+                            <div class="video-controls-top">
+                                <button id="btnSwitchSource" title="화질 및 소스 변경"><i class="fa-solid fa-sliders"></i> HD 고화질</button>
+                            </div>
+                        </div>
+                        
+                        <div class="video-container">
+                            <!-- Video Element -->
+                            <video id="baseballVideo" controls autoplay muted loop playsinline poster="assets/bg.png">
+                                <source src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" type="application/x-mpegURL">
+                                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" type="video/mp4">
+                                브라우저가 비디오 재생을 지원하지 않습니다.
+                            </video>
+                            
+                            <!-- Virtual Overlay for Live Stats inside Video -->
+                            <div class="video-overlay-hud">
+                                <div class="hud-score">
+                                    <div class="hud-team away">
+                                        <span class="hud-logo kia-bg">KIA</span>
+                                        <span class="hud-score-num" id="hudAwayScore">4</span>
+                                    </div>
+                                    <div class="hud-divider">:</div>
+                                    <div class="hud-team home">
+                                        <span class="hud-score-num" id="hudHomeScore">3</span>
+                                        <span class="hud-logo samsung-bg">삼성</span>
+                                    </div>
+                                    <div class="hud-inning" id="hudInning">8회초</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video Source Modal (Hidden by default) -->
+                        <div class="modal" id="streamModal">
+                            <div class="modal-content glass-card">
+                                <h3><i class="fa-solid fa-satellite-dish"></i> 실시간 스트리밍 소스 연결</h3>
+                                <p>원하는 야구 중계 라이브 스트림 URL (.m3u8, .mp4 등) 또는 유튜브 임베드 링크를 입력해 시청하세요.</p>
+                                <div class="form-group">
+                                    <label for="streamUrl">스트림 URL 입력:</label>
+                                    <input type="text" id="streamUrl" placeholder="https://example.com/live/stream.m3u8" value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">
+                                </div>
+                                <div class="modal-actions">
+                                    <button class="btn btn-secondary" id="closeStreamModal">취소</button>
+                                    <button class="btn btn-primary" id="btnApplyStream">스트림 적용</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pitch Tracker & Pitcher vs Batter Area -->
+                    <div class="sub-info-grid">
+                        <!-- Pitch Tracker (Saves Pitch locations) -->
+                        <div class="glass-card pitch-tracker-card">
+                            <div class="card-title">
+                                <h3><i class="fa-solid fa-crosshairs"></i> 투구 실시간 분석 (Pitch Tracker)</h3>
+                                <span class="pitch-speed" id="lastPitchSpeed">148 km/h</span>
+                            </div>
+                            <div class="pitch-tracker-container">
+                                <div class="strike-zone">
+                                    <!-- Strike zone grid -->
+                                    <div class="zone-grid"></div>
+                                    <!-- Dynamic Pitch dots will be added by JS -->
+                                    <div class="pitch-dot-container" id="pitchDotContainer">
+                                        <!-- Interactive pitch dots -->
+                                    </div>
+                                </div>
+                                <div class="tracker-legend">
+                                    <span class="legend-item"><span class="dot strike"></span>스트라이크</span>
+                                    <span class="legend-item"><span class="dot ball"></span>볼</span>
+                                    <span class="legend-item"><span class="dot hit"></span>인플레이 타구</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pitcher vs Batter Matchup -->
+                        <div class="glass-card matchup-card">
+                            <div class="card-title">
+                                <h3><i class="fa-solid fa-user-group"></i> 투타 맞대결 현황</h3>
+                            </div>
+                            <div class="matchup-container">
+                                <div class="player-profile pitcher">
+                                    <div class="player-avatar pitcher-avatar"><i class="fa-solid fa-user-tie"></i></div>
+                                    <div class="player-info">
+                                        <span class="role">PITCHER</span>
+                                        <span class="name" id="pitcherName">제임스 네일</span>
+                                        <span class="stats" id="pitcherStats">투구수 88구 | 4피안타 6K 2실점</span>
+                                    </div>
+                                </div>
+                                <div class="vs-badge">VS</div>
+                                <div class="player-profile batter">
+                                    <div class="player-avatar batter-avatar"><i class="fa-solid fa-user-ninja"></i></div>
+                                    <div class="player-info">
+                                        <span class="role">BATTER</span>
+                                        <span class="name" id="batterName">구자욱</span>
+                                        <span class="stats" id="batterStats">3타수 2안타(1홈런) 2타점</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="current-at-bat-history">
+                                <span>이번 타석:</span>
+                                <div class="pitch-balls-row" id="currentAtBatPitches">
+                                    <span class="pitch-history-ball strike">S</span>
+                                    <span class="pitch-history-ball ball">B</span>
+                                    <span class="pitch-history-ball strike">S</span>
+                                    <span class="pitch-history-ball ball">B</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Grid: Scoreboard, Diamond, Text Broadcast, Chatting -->
+                <div class="right-panel">
+                    
+                    <!-- Scoreboard & Ball Count & Diamond -->
+                    <div class="glass-card live-status-card">
+                        <!-- Scoreboard Matrix -->
+                        <div class="matrix-scoreboard">
+                            <table class="score-table">
+                                <thead>
+                                    <tr>
+                                        <th>TEAM</th>
+                                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th>
+                                        <th class="summary-col">R</th><th class="summary-col">H</th><th class="summary-col">E</th><th class="summary-col">B</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="rowAway">
+                                        <td class="team-name text-kia">KIA</td>
+                                        <td>0</td><td>1</td><td>0</td><td>2</td><td>0</td><td>1</td><td>0</td><td class="current-inning-cell" id="awayInning8">0</td><td>-</td>
+                                        <td class="bold-score" id="awayR">4</td><td id="awayH">7</td><td id="awayE">0</td><td id="awayB">3</td>
+                                    </tr>
+                                    <tr id="rowHome">
+                                        <td class="team-name text-samsung">삼성</td>
+                                        <td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>2</td><td id="homeInning8">0</td><td>-</td>
+                                        <td class="bold-score" id="homeR">3</td><td id="homeH">6</td><td id="homeE">1</td><td id="homeB">4</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="diamond-and-counts">
+                            <!-- Diamond Field Graphic (Bases) -->
+                            <div class="baseball-diamond">
+                                <div class="field-grass"></div>
+                                <div class="base base-1" id="base1"></div>
+                                <div class="base base-2" id="base2"></div>
+                                <div class="base base-3" id="base3"></div>
+                                <div class="home-plate"></div>
+                            </div>
+
+                            <!-- Count Indicators (S, B, O) -->
+                            <div class="count-board">
+                                <div class="count-row">
+                                    <span class="count-label">BALL</span>
+                                    <div class="count-dots" id="ballDots">
+                                        <span class="dot-btn"></span>
+                                        <span class="dot-btn"></span>
+                                        <span class="dot-btn"></span>
+                                    </div>
+                                </div>
+                                <div class="count-row">
+                                    <span class="count-label text-strike">STRIKE</span>
+                                    <div class="count-dots" id="strikeDots">
+                                        <span class="dot-btn"></span>
+                                        <span class="dot-btn"></span>
+                                    </div>
+                                </div>
+                                <div class="count-row">
+                                    <span class="count-label text-out">OUT</span>
+                                    <div class="count-dots" id="outDots">
+                                        <span class="dot-btn"></span>
+                                        <span class="dot-btn"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Text Broadcast -->
+                    <div class="glass-card text-broadcast-card">
+                        <div class="card-title">
+                            <h3><i class="fa-solid fa-list-check"></i> 실시간 문자 중계</h3>
+                            <span class="status-pill animated-pulse">LIVE FEED</span>
+                        </div>
+                        <div class="text-broadcast-list" id="textBroadcastList">
+                            <!-- Injected dynamically by JS -->
+                            <div class="commentary-item highlight">
+                                <span class="time">8회초</span>
+                                <p><strong>KIA 공격:</strong> 4번 타자 최형우 삼진 아웃! 원태인 선수의 128km 슬라이더에 배트가 헛돌았습니다. (2아웃)</p>
+                            </div>
+                            <div class="commentary-item">
+                                <span class="time">8회초</span>
+                                <p><strong>KIA 공격:</strong> 3번 타자 김도영 볼넷 판정. 볼카운트 3-2에서 풀카운트 승부 끝에 1루로 진루합니다. (1루 주자 안치홍)</p>
+                            </div>
+                            <div class="commentary-item">
+                                <span class="time">8회초</span>
+                                <p><strong>KIA 공격:</strong> 2번 타자 안치홍 우익수 앞 안타! 원바운드로 잡히며 주자 1루가 됩니다. (1아웃)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Chat / Cheering Space -->
+                    <div class="glass-card chat-card">
+                        <div class="card-title">
+                            <h3><i class="fa-solid fa-comments"></i> 구장 라이브 채팅 응원방</h3>
+                            <span class="online-users"><i class="fa-solid fa-users"></i> 34,921명</span>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- Injected dynamically by JS -->
+                            <div class="chat-msg">
+                                <span class="chat-user text-kia">타이거즈v12</span>
+                                <span class="chat-text">오늘 네일 제구 미쳤네 ㅋㅋㅋ 무조건 이긴다</span>
+                            </div>
+                            <div class="chat-msg">
+                                <span class="chat-user text-samsung">사자왕구자욱</span>
+                                <span class="chat-text">태인이 8회도 올라왔네 ㄷㄷ 힘내자 라이온즈!!</span>
+                            </div>
+                            <div class="chat-msg">
+                                <span class="chat-user text-lotte">꼴팬컴백</span>
+                                <span class="chat-text">사직 경기는 언제 시작하나요? 비 오나?</span>
+                            </div>
+                            <div class="chat-msg">
+                                <span class="chat-user text-kia">광주챔필러</span>
+                                <span class="chat-text">도영아 홈런 한방만 더 치고 굳히자!!</span>
+                            </div>
+                        </div>
+                        <form class="chat-input-form" id="chatForm">
+                            <input type="text" id="chatInput" placeholder="응원 메시지를 입력해보세요!" required autocomplete="off">
+                            <button type="submit" class="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                        </form>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Tab Content: Schedule (Hidden initially) -->
+            <div class="dashboard-grid tab-content" id="schedule-tab">
+                <div class="glass-card full-width-card">
+                    <div class="card-title">
+                        <h3><i class="fa-solid fa-calendar-days"></i> KBO 정규리그 경기 일정 (오늘)</h3>
+                        <span class="schedule-date" id="currentDateStr">2026년 5월 21일 (목)</span>
+                    </div>
+                    <div class="schedule-list">
+                        <div class="schedule-item live">
+                            <div class="team-vs">
+                                <span class="team text-kia">KIA 타이거즈</span>
+                                <span class="score-display">4 : 3</span>
+                                <span class="team text-samsung">삼성 라이온즈</span>
+                            </div>
+                            <div class="game-status"><span class="live-pill">8회초 진행 중</span></div>
+                            <div class="ballpark">대구 삼성라이온즈파크</div>
+                        </div>
+                        <div class="schedule-item live">
+                            <div class="team-vs">
+                                <span class="team text-lg">LG 트윈스</span>
+                                <span class="score-display">2 : 2</span>
+                                <span class="team text-doosan">두산 베어스</span>
+                            </div>
+                            <div class="game-status"><span class="live-pill">5회말 진행 중</span></div>
+                            <div class="ballpark">서울 잠실야구장</div>
+                        </div>
+                        <div class="schedule-item">
+                            <div class="team-vs">
+                                <span class="team text-hanwha">한화 이글스</span>
+                                <span class="score-display">VS</span>
+                                <span class="team text-lotte">롯데 자이언츠</span>
+                            </div>
+                            <div class="game-status">18:30 예정</div>
+                            <div class="ballpark">부산 사직야구장</div>
+                        </div>
+                        <div class="schedule-item">
+                            <div class="team-vs">
+                                <span class="team text-ssg">SSG 랜더스</span>
+                                <span class="score-display">VS</span>
+                                <span class="team text-kt">KT 위즈</span>
+                            </div>
+                            <div class="game-status">18:30 예정</div>
+                            <div class="ballpark">수원 KT위즈파크</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Rankings (Hidden initially) -->
+            <div class="dashboard-grid tab-content" id="ranking-tab">
+                <div class="glass-card full-width-card">
+                    <div class="card-title">
+                        <h3><i class="fa-solid fa-list-ol"></i> 2026 KBO 정규리그 팀 순위</h3>
+                    </div>
+                    <table class="ranking-table">
+                        <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>구단</th>
+                                <th>경기</th>
+                                <th>승</th>
+                                <th>무</th>
+                                <th>패</th>
+                                <th>승률</th>
+                                <th>게임차</th>
+                                <th>최근 10경기</th>
+                                <th>연속</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="rank-top">
+                                <td>1</td>
+                                <td class="bold-team text-kia">KIA</td>
+                                <td>46</td>
+                                <td>29</td>
+                                <td>1</td>
+                                <td>16</td>
+                                <td>0.644</td>
+                                <td>0.0</td>
+                                <td>7승-3패</td>
+                                <td>2승</td>
+                            </tr>
+                            <tr class="rank-top">
+                                <td>2</td>
+                                <td class="bold-team text-samsung">삼성</td>
+                                <td>47</td>
+                                <td>27</td>
+                                <td>0</td>
+                                <td>20</td>
+                                <td>0.574</td>
+                                <td>3.0</td>
+                                <td>6승-4패</td>
+                                <td>1패</td>
+                            </tr>
+                            <tr class="rank-top">
+                                <td>3</td>
+                                <td class="bold-team text-doosan">두산</td>
+                                <td>46</td>
+                                <td>25</td>
+                                <td>2</td>
+                                <td>19</td>
+                                <td>0.568</td>
+                                <td>3.5</td>
+                                <td>5승-5패</td>
+                                <td>1승</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td class="bold-team text-lg">LG</td>
+                                <td>45</td>
+                                <td>24</td>
+                                <td>1</td>
+                                <td>20</td>
+                                <td>0.545</td>
+                                <td>4.5</td>
+                                <td>4승-6패</td>
+                                <td>1패</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td class="bold-team text-ssg">SSG</td>
+                                <td>46</td>
+                                <td>23</td>
+                                <td>1</td>
+                                <td>22</td>
+                                <td>0.511</td>
+                                <td>6.0</td>
+                                <td>5승-5패</td>
+                                <td>2패</td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td class="bold-team text-nc">NC</td>
+                                <td>45</td>
+                                <td>22</td>
+                                <td>0</td>
+                                <td>23</td>
+                                <td>0.489</td>
+                                <td>7.0</td>
+                                <td>3승-7패</td>
+                                <td>1승</td>
+                            </tr>
+                            <tr>
+                                <td>7</td>
+                                <td class="bold-team text-lotte">롯데</td>
+                                <td>44</td>
+                                <td>20</td>
+                                <td>2</td>
+                                <td>22</td>
+                                <td>0.476</td>
+                                <td>7.5</td>
+                                <td>7승-3패</td>
+                                <td>3승</td>
+                            </tr>
+                            <tr>
+                                <td>8</td>
+                                <td class="bold-team text-hanwha">한화</td>
+                                <td>46</td>
+                                <td>19</td>
+                                <td>1</td>
+                                <td>26</td>
+                                <td>0.422</td>
+                                <td>10.0</td>
+                                <td>4승-6패</td>
+                                <td>1패</td>
+                            </tr>
+                            <tr>
+                                <td>9</td>
+                                <td class="bold-team text-kt">KT</td>
+                                <td>46</td>
+                                <td>18</td>
+                                <td>1</td>
+                                <td>27</td>
+                                <td>0.400</td>
+                                <td>11.0</td>
+                                <td>5승-5패</td>
+                                <td>2패</td>
+                            </tr>
+                            <tr>
+                                <td>10</td>
+                                <td class="bold-team text-kiwoom">키움</td>
+                                <td>45</td>
+                                <td>16</td>
+                                <td>0</td>
+                                <td>29</td>
+                                <td>0.356</td>
+                                <td>13.0</td>
+                                <td>2승-8패</td>
+                                <td>5패</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: Highlights (Hidden initially) -->
+            <div class="dashboard-grid tab-content" id="highlights-tab">
+                <div class="glass-card full-width-card">
+                    <div class="card-title">
+                        <h3><i class="fa-solid fa-circle-play"></i> 어제 경기 주요 하이라이트</h3>
+                    </div>
+                    <div class="highlights-grid">
+                        <div class="highlight-item" data-video-id="tSnhB-G6aKk">
+                            <div class="hl-thumbnail">
+                                <img src="assets/bg.png" alt="Highlight 1">
+                                <span class="play-icon"><i class="fa-solid fa-play"></i></span>
+                                <span class="duration">12:35</span>
+                            </div>
+                            <div class="hl-meta">
+                                <h4>[5/20 하이라이트] KIA vs 삼성 역대급 1점차 난타전 승부!</h4>
+                                <p>조회수 12.4만회 • 1일 전</p>
+                            </div>
+                        </div>
+                        <div class="highlight-item" data-video-id="9_dghmP0Vrs">
+                            <div class="hl-thumbnail">
+                                <img src="assets/bg.png" alt="Highlight 2">
+                                <span class="play-icon"><i class="fa-solid fa-play"></i></span>
+                                <span class="duration">10:14</span>
+                            </div>
+                            <div class="hl-meta">
+                                <h4>[5/20 하이라이트] LG vs 두산 잠실 더비, 연장 12회 극적 끝내기 안타!</h4>
+                                <p>조회수 9.8만회 • 1일 전</p>
+                            </div>
+                        </div>
+                        <div class="highlight-item" data-video-id="k5e4l3QvEwM">
+                            <div class="hl-thumbnail">
+                                <img src="assets/bg.png" alt="Highlight 3">
+                                <span class="play-icon"><i class="fa-solid fa-play"></i></span>
+                                <span class="duration">08:44</span>
+                            </div>
+                            <div class="hl-meta">
+                                <h4>[5/20 하이라이트] 한화 류현진 7이닝 무실점 완벽투로 시즌 5승 달성!</h4>
+                                <p>조회수 15.2만회 • 1일 전</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <div class="mobile-bottom-nav">
+        <a href="#" class="mobile-nav-item active" data-tab="live">
+            <i class="fa-solid fa-tower-broadcast"></i>
+            <span>중계</span>
+        </a>
+        <a href="#" class="mobile-nav-item" data-tab="schedule">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>일정</span>
+        </a>
+        <a href="#" class="mobile-nav-item" data-tab="ranking">
+            <i class="fa-solid fa-list-ol"></i>
+            <span>순위</span>
+        </a>
+        <a href="#" class="mobile-nav-item" data-tab="highlights">
+            <i class="fa-solid fa-circle-play"></i>
+            <span>영상</span>
+        </a>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then((reg) => console.log('Service Worker registered successfully!', reg.scope))
+                    .catch((err) => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
